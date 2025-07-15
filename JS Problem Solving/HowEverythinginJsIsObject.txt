@@ -1,0 +1,8 @@
+39. Why can we call methods on primitive types?
+JavaScript allows working with primitive data types - strings, numbers, etc. - as if they were objects. Primitive data types have methods.
+To make this functionality available, each primitive data type has its own wrapper object: String, Number, Boolean, and Symbol. Thanks to these wrapper objects, primitive data types have different sets of methods, such as toLowerCase() or toUpperCase().
+
+The first difference between WeakMap and Map is that the keys in WeakMap must be objects, not primitive values.
+ The second difference is in the memory storage of the data structures. The JavaScript engine keeps values in memory as long as they are reachable, meaning they can be used.
+
+ 

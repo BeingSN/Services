@@ -1,0 +1,7 @@
+# .gitignore at root
+node_modules/
+
+/Docker-Learning/client/node_modules/
+/Docker-Learning/server/node_modules/
+/kafkapp/node_modules/
+/Multi-Tenant-Blog/multitentblog/node_modules/

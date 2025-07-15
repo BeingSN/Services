@@ -1,0 +1,117 @@
+# .github/workflows/deploy.yml
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY_SERVER: prac-app-server
+  ECR_REPOSITORY_CLIENT: prac-app-client
+  ECS_SERVICE_SERVER: prac-server-service
+  ECS_SERVICE_CLIENT: prac-client-service
+  ECS_CLUSTER: prac-cluster
+  ECS_TASK_DEFINITION_SERVER: prac-server-task
+  ECS_TASK_DEFINITION_CLIENT: prac-client-task
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract metadata for server
+        id: meta-server
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_SERVER }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Extract metadata for client
+        id: meta-client
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_CLIENT }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push server image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          file: ./server/Dockerfile
+          push: true
+          tags: ${{ steps.meta-server.outputs.tags }}
+          labels: ${{ steps.meta-server.outputs.labels }}
+
+      - name: Build and push client image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          file: ./client/Dockerfile
+          push: true
+          tags: ${{ steps.meta-client.outputs.tags }}
+          labels: ${{ steps.meta-client.outputs.labels }}
+
+      - name: Fill in the new image ID in the Amazon ECS task definition for server
+        id: task-def-server
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: .aws/task-definition-server.json
+          container-name: server
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_SERVER }}:latest
+
+      - name: Fill in the new image ID in the Amazon ECS task definition for client
+        id: task-def-client
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: .aws/task-definition-client.json
+          container-name: client
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_CLIENT }}:latest
+
+      - name: Deploy Amazon ECS task definition for server
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-server.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE_SERVER }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Deploy Amazon ECS task definition for client
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-client.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE_CLIENT }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Summary
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "🔗 Server Image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_SERVER }}:latest"
+          echo "🔗 Client Image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_CLIENT }}:latest"
