@@ -1,17 +1,13 @@
+// app.js
 const express = require("express");
 const app = express();
-const userRoutes = require("./routes/user.routes");
-const dotenv = require("dotenv");
-dotenv.config();
+const captainRoutes = require("./routes/captain.routes");
 const cookieParser = require("cookie-parser");
-const rabbitMq = require("./service/rabbit");
-
-rabbitMq.connect();
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/", userRoutes);
+app.use("/", captainRoutes);
 
 module.exports = app;

@@ -1,4 +1,5 @@
 const userModel = require("../models/user.model");
+const blacklisttokenModel = require("../models/blacklisttoken.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -64,6 +65,7 @@ module.exports.login = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 module.exports.logout = async (req, res) => {
   try {
     const token = req.cookies.token;

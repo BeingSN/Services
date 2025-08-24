@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  mongo_user:
+    image: mongo:6.0
+    container_name: mongo_user_container
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongo_user_data:/data/db
+
+  mongo_captain:
+    image: mongo:6.0
+    container_name: mongo_captain_container
+    restart: always
+    ports:
+      - "27018:27017" # host 27018 -> container 27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongo_captain_data:/data/db
+
+  mongo_ride:
+    image: mongo:6.0
+    container_name: mongo_ride_container
+    restart: always
+    ports:
+      - "27019:27017" # host 27019 -> container 27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongo_ride_data:/data/db
+
+volumes:
+  mongo_user_data:
+  mongo_captain_data:
+  mongo_ride_data:
