@@ -5,3 +5,5 @@ node_modules/
 /Docker-Learning/server/node_modules/
 /kafkapp/node_modules/
 /Multi-Tenant-Blog/multitentblog/node_modules/
+temp_auto_push.bat
+temp_interactive_push.bat
